@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>USAID Death Counter</title>
+    <meta property="og:title" content="USAID Death Counter">
+    <meta property="og:description" content="USAID deaths caused by Elon Musk. 14M projected by 2030.">
+    <meta property="og:image" content="images/usaid.jpg">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="USAID Death Counter">
+    <meta name="twitter:description" content="USAID deaths caused by Elon Musk. 14M projected by 2030.">
+    <meta name="twitter:image" content="images/usaid.jpg">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #0a0a0a;
+            color: #fff;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            padding: 2rem;
+        }
+        #datetime {
+            font-size: clamp(0.8rem, 2.5vw, 1.2rem);
+            font-weight: 400;
+            color: #666;
+            margin-bottom: 0.5em;
+            font-variant-numeric: tabular-nums;
+            font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+        }
+        #counter-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-width: 100%;
+        }
+        #counter {
+            font-size: clamp(4rem, 14vw, 10rem);
+            font-weight: 900;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: 0.02em;
+            display: flex;
+            justify-content: center;
+        }
+        #counter span {
+            display: inline-block;
+            transition: none;
+        }
+        #counter span.changed {
+            animation: pop 0.6s ease-out;
+        }
+        @keyframes pop {
+            0% { transform: scale(1); color: #fff; }
+            15% { transform: scale(1.35); color: #f33; }
+            40% { transform: scale(1.1); color: #f66; }
+            100% { transform: scale(1); color: #fff; }
+        }
+        #progress-track {
+            width: 100%;
+            height: 2px;
+            background: #222;
+            margin-top: 0.6em;
+        }
+        #progress-bar {
+            height: 100%;
+            width: 0%;
+            background: #f33;
+        }
+        #description {
+            font-size: clamp(1.6rem, 4.5vw, 2.5rem);
+            font-weight: 700;
+            color: #fff;
+            margin-top: 1em;
+            text-align: center;
+            white-space: nowrap;
+        }
+        #description .sentence {
+            display: inline;
+        }
+        #footer-label {
+            font-size: clamp(0.8rem, 2.5vw, 1.2rem);
+            font-weight: 400;
+            color: #666;
+            margin-top: 2.5em;
+            font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+            text-align: center;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        #footer-label:hover {
+            color: #f33;
+        }
+    </style>
+</head>
+<body>
+    <div id="datetime"></div>
+    <div id="counter-wrap">
+        <div id="counter"></div>
+        <div id="progress-track"><div id="progress-bar"></div></div>
+        <p id="description"><span class="sentence">USAID deaths caused by Elon Musk.</span><br><span class="sentence">14M projected by 2030.</span></p>
+        <a id="footer-label" href="https://ph.ucla.edu/news-events/news/research-finds-more-14-million-preventable-deaths-2030-if-usaid-defunding" target="_blank">Source</a>
+    </div>
+    <script>
+        const START_DATE = new Date('2026-01-01T00:00:00').getTime();
+        const END_DATE = new Date('2030-01-01T00:00:00').getTime();
+        const START_VALUE = 757314;
+        const END_VALUE = 14000000;
+        const TOTAL_DURATION = END_DATE - START_DATE;
+        const TOTAL_INCREMENT = END_VALUE - START_VALUE;
+
+        const counterEl = document.getElementById('counter');
+        const datetimeEl = document.getElementById('datetime');
+        const progressBar = document.getElementById('progress-bar');
+        const progressTrack = document.getElementById('progress-track');
+        const description = document.getElementById('description');
+        let prevChars = '';
+
+        const msPerCount = TOTAL_DURATION / TOTAL_INCREMENT;
+
+        function pad(n) { return n < 10 ? '0' + n : n; }
+
+        function renderCounter(value) {
+            const formatted = value.toLocaleString('en-US');
+            const chars = formatted.split('');
+
+            if (counterEl.children.length !== chars.length) {
+                counterEl.innerHTML = chars.map(c => '<span>' + c + '</span>').join('');
+            } else {
+                chars.forEach((c, i) => {
+                    const span = counterEl.children[i];
+                    if (prevChars[i] !== c) {
+                        span.textContent = c;
+                        span.classList.remove('changed');
+                        void span.offsetWidth;
+                        span.classList.add('changed');
+                    }
+                });
+            }
+            prevChars = chars;
+        }
+
+        function update() {
+            const now = new Date();
+            const elapsed = Math.max(0, Math.min(now.getTime() - START_DATE, TOTAL_DURATION));
+            const progress = elapsed / TOTAL_DURATION;
+            const exactValue = START_VALUE + TOTAL_INCREMENT * progress;
+            const value = Math.floor(exactValue);
+            const fraction = exactValue - value;
+            progressBar.style.width = (fraction * 100) + '%';
+            renderCounter(value);
+
+            const counterWidth = counterEl.offsetWidth;
+            progressTrack.style.width = counterWidth + 'px';
+            description.style.removeProperty('width');
+            description.style.fontSize = '';
+            const descNatural = description.scrollWidth;
+            if (descNatural > counterWidth) {
+                description.style.fontSize = (parseFloat(getComputedStyle(description).fontSize) * counterWidth / descNatural) + 'px';
+            }
+            description.style.width = counterWidth + 'px';
+
+            const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+            datetimeEl.textContent =
+                months[now.getMonth()] + ' ' + now.getDate() + ', ' + now.getFullYear() + '  ' +
+                pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
+
+            requestAnimationFrame(update);
+        }
+
+        update();
+    </script>
+</body>
+</html>
